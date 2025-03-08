@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 )
@@ -52,28 +53,30 @@ func parser(filename string) ([]*Session, error) {
 			switch prev {
 			case "s":
 				if parts[0] == "name" {
+					assert(isString(parts[1]), fmt.Errorf("%w: value is not string.", invalidValue))
 					session.Name = parts[1]
 				} else if parts[1] == "root" {
-					exists, err := dirExists(parts[1])
-					if err != nil {
-						return nil, err
-					} else if !exists {
+					if exists, _ := dirExists(parts[1]); !exists {
 						return nil, dirNotExist
 					}
+					assert(isString(parts[1]), fmt.Errorf("%w: value is not string.", invalidValue))
 					session.Root = parts[1]
 				} else {
 					return nil, invalidKey
 				}
 			case "w":
 				if parts[0] == "name" {
+					assert(isString(parts[1]), fmt.Errorf("%w: value is not string.", invalidValue))
 					window.Name = parts[1]
 				} else if parts[1] == "command" {
+					assert(isString(parts[1]), fmt.Errorf("%w: value is not string.", invalidValue))
 					window.Command = parts[1]
 				} else {
 					return nil, invalidKey
 				}
 			case "p":
 				if parts[1] == "command" {
+					assert(isString(parts[1]), fmt.Errorf("%w: value is not string.", invalidValue))
 					window.Command = parts[1]
 				} else {
 					return nil, invalidKey
@@ -87,4 +90,11 @@ func parser(filename string) ([]*Session, error) {
 		return nil, err
 	}
 	return sessions, nil
+}
+
+func isString(val string) bool {
+	if string(val[0]) == "\"" && string(val[len(val)-1]) == "\"" {
+		return true
+	}
+	return false
 }

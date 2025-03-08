@@ -11,6 +11,7 @@ var (
 	invalidValue = errors.New("Invalid value.")
 	invalidFile  = errors.New("Invalid file type, must be TOML.")
 	dirNotExist  = errors.New("Directory does not exist.")
+	fileNotExist = errors.New("File does not exist.")
 )
 
 type Session struct {
