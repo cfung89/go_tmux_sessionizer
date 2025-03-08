@@ -21,15 +21,15 @@ func parser(filename string) ([]*Session, error) {
 	var window *Window
 
 	scanner := bufio.NewScanner(f)
+	var prev string
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if line == "" || string(line[0]) == "#" {
 			continue
 		}
-		var prev string
 		switch line {
 		case "[[sessions]]":
-			session = &Session{}
+			session = &Session{DefaultWinInd: -1}
 			sessions = append(sessions, session)
 			prev = "s"
 		case "[[sessions.windows]]":
@@ -52,34 +52,57 @@ func parser(filename string) ([]*Session, error) {
 			parts[1] = strings.TrimSpace(parts[1])
 			switch prev {
 			case "s":
-				if parts[0] == "name" {
-					assert(isString(parts[1]), fmt.Errorf("%w: value is not string.", invalidValue))
-					session.Name = parts[1]
-				} else if parts[1] == "root" {
+				switch parts[0] {
+				case "name":
+					if !isString(parts[1]) {
+						return nil, fmt.Errorf("%w: value is not string.", invalidValue)
+					}
+					session.Name = strings.Trim(parts[1], "\"")
+				case "root":
+					if !isString(parts[1]) {
+						return nil, fmt.Errorf("%w: value is not string.", invalidValue)
+					}
+					parts[1] = strings.Trim(parts[1], "\"")
 					if exists, _ := dirExists(parts[1]); !exists {
 						return nil, dirNotExist
 					}
-					assert(isString(parts[1]), fmt.Errorf("%w: value is not string.", invalidValue))
 					session.Root = parts[1]
-				} else {
-					return nil, invalidKey
+				default:
+					return nil, fmt.Errorf("%w: key of session is invalid", invalidKey)
 				}
 			case "w":
-				if parts[0] == "name" {
-					assert(isString(parts[1]), fmt.Errorf("%w: value is not string.", invalidValue))
-					window.Name = parts[1]
-				} else if parts[1] == "command" {
-					assert(isString(parts[1]), fmt.Errorf("%w: value is not string.", invalidValue))
-					window.Command = parts[1]
-				} else {
-					return nil, invalidKey
+				switch parts[0] {
+				case "name":
+					if !isString(parts[1]) {
+						return nil, fmt.Errorf("%w: value is not string.", invalidValue)
+					}
+					window.Name = strings.Trim(parts[1], "\"")
+				case "command":
+					if !isString(parts[1]) {
+						return nil, fmt.Errorf("%w: value is not string.", invalidValue)
+					}
+					window.Command = strings.Trim(parts[1], "\"")
+				case "default":
+					val, err := parseBool(parts[1])
+					if err != nil {
+						return nil, fmt.Errorf("%w: value is not string.", invalidValue)
+					}
+					if val && session.DefaultWinInd != -1 {
+						return nil, fmt.Errorf("%w: More than default window in session.", invalidValue)
+					}
+					window.Default = val
+					session.DefaultWinInd = len(session.Windows) - 1
+				default:
+					return nil, fmt.Errorf("%w: key of window is invalid", invalidKey)
 				}
 			case "p":
-				if parts[1] == "command" {
-					assert(isString(parts[1]), fmt.Errorf("%w: value is not string.", invalidValue))
-					window.Command = parts[1]
+				if parts[0] == "command" {
+					if !isString(parts[1]) {
+						return nil, fmt.Errorf("%w: value is not string.", invalidValue)
+					}
+					window.Command = strings.Trim(parts[1], "\"")
 				} else {
-					return nil, invalidKey
+					return nil, fmt.Errorf("%w: key of pane is invalid", invalidKey)
 				}
 			default:
 				return nil, errors.New("Internal error.")
@@ -93,8 +116,18 @@ func parser(filename string) ([]*Session, error) {
 }
 
 func isString(val string) bool {
-	if string(val[0]) == "\"" && string(val[len(val)-1]) == "\"" {
+	if (string(val[0]) == "\"" && string(val[len(val)-1]) == "\"") ||
+		(string(val[0]) == "'" && string(val[len(val)-1]) == "'") {
 		return true
 	}
 	return false
+}
+
+func parseBool(val string) (bool, error) {
+	if val == "true" {
+		return true, nil
+	} else if val == "false" {
+		return false, nil
+	}
+	return false, invalidValue
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 )
 
@@ -20,13 +19,14 @@ func main() {
 		}
 	}
 
-	if exists, _ := fExists(fmt.Sprintf("%s/%s", path, configFile)); exists {
-		filename := "test/example.toml"
-		toml, err := parser(filename)
-		check(err)
-		err = confSessionizer(toml)
-		check(err)
-	}
+	// confSessionizer will be fixed
+	// filename := fmt.Sprintf("%s/%s", path, configFile)
+	// if exists, _ := fExists(filename); exists {
+	// 	toml, err := parser(filename)
+	// 	check(err)
+	// 	err = confSessionizer(toml)
+	// 	check(err)
+	// }
 
 	err = simpleSessionizer(path)
 	check(err)

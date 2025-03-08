@@ -39,7 +39,7 @@ func fzf(root string) (string, error) {
 		return "", fmt.Errorf("fzf command failed to start: %w", err)
 	}
 
-	findCh := make(chan error, 1)
+	findCh := make(chan error, 1) // ignored
 	go func() {
 		findCh <- findCmd.Wait()
 		w.Close()
@@ -50,23 +50,16 @@ func fzf(root string) (string, error) {
 		fzfCh <- fzfCmd.Wait()
 	}()
 
-	for {
-		select {
-		case err := <-findCh:
-			if err != nil {
-				return "", fmt.Errorf("find command failed: %w", err)
+	select {
+	case <-ctx.Done():
+		return "", ctx.Err()
+	case err := <-fzfCh:
+		if err != nil {
+			if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 130 {
+				return "", nil // gracefully cancelled
 			}
-		case err := <-fzfCh:
-			if err != nil {
-				if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 130 {
-					return "", nil // gracefully cancelled
-				}
-				return "", fmt.Errorf("fzf command failed: %w", err)
-			}
-		default:
-			if s := res.String(); s != "" {
-				return s, nil
-			}
+			return "", fmt.Errorf("fzf command failed: %w", err)
 		}
 	}
+	return strings.TrimSpace(res.String()), nil
 }

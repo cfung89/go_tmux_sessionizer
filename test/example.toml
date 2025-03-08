@@ -1,0 +1,28 @@
+[[sessions]]
+name = "dev"
+root = "/home"
+
+  [[sessions.windows]]
+  name = "default-window"
+  default = true
+  command = "echo 'Welcome to the dev session!'"
+
+  [[sessions.windows.panes]]
+  command = "htop"
+
+  [[sessions.windows]]
+  name = "editor"
+  default = false
+  command = "nvim"
+
+  [[sessions.windows.panes]]
+  command = "tail -f /var/log/syslog"
+  
+  [[sessions.windows]]
+  name = "server"
+  
+    [[sessions.windows.panes]]
+    command = "python3 -m http.server"
+    
+    [[sessions.windows.panes]]
+    command = "watch -n 5 'df -h'"
