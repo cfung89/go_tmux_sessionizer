@@ -14,18 +14,20 @@ var (
 	invalidFile  = errors.New("Invalid file type, must be TOML.")
 	dirNotExist  = errors.New("Directory does not exist.")
 	fileNotExist = errors.New("File does not exist.")
+	inTmux       = errors.New("Already in tmux session")
+	internalErr  = errors.New("Internal error.")
 )
 
 type Session struct {
-	Name          string
-	Root          string
-	DefaultWinInd int
-	Windows       []*Window
+	Name    string
+	Root    string
+	Default *Window
+	Windows []*Window
 }
 
 func (s *Session) ToString() string {
-	str := fmt.Sprintf("Session:\n\t- Name: %s\n\t- Root: %s\n\t- DefaultWinInd: %d\n\t- Windows:\n",
-		s.Name, s.Root, s.DefaultWinInd)
+	str := fmt.Sprintf("Session:\n\t- Name: %s\n\t- Root: %s\n\t- Default: %t\n\t- Windows:\n",
+		s.Name, s.Root, s.Default != nil)
 	for _, n := range s.Windows {
 		str += fmt.Sprintf("\t%s\n", n.ToString(2))
 	}

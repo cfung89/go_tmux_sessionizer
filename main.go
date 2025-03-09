@@ -10,7 +10,9 @@ func main() {
 	var path string
 	var err error
 	if len(os.Args) == 1 {
-		path, err = fzf(".")
+		homeDir, err := os.UserHomeDir()
+		check(err)
+		path, err = fzf(homeDir)
 		check(err)
 	} else {
 		if bool, _ := dirExists(os.Args[1]); bool {

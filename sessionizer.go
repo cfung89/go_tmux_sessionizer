@@ -5,14 +5,39 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 )
 
 func simpleSessionizer(root string) error {
-	cmd := exec.Command("tmux new-session -c", root)
+	// can also use os.Getenv("TERM_PROGRAM") == "tmux"
+	root, err := filepath.Abs(root)
+	base := strings.ReplaceAll(filepath.Base(root), " ", "")
+	if err != nil {
+		return err
+	}
+	if os.Getenv("TMUX") == "" {
+		cmd := exec.Command("tmux", "new-session", "-c", root, "-s", base)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err := cmd.Run()
+		return err
+	}
+	cmd := exec.Command("tmux", "new-session", "-d", "-c", root, "-s", base)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err := cmd.Run()
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	cmd = exec.Command("tmux", "switch-client", "-t", base)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
 	return err
 }
 
@@ -21,30 +46,30 @@ func confSessionizer(sessions []*Session) error {
 		return errors.New("Sessions is nil.")
 	}
 	for i, session := range sessions {
-		var name string
-		if session.Name == "" {
-			name = fmt.Sprintf("-s %d", i)
-		} else {
-			name = fmt.Sprintf("-s %s", session.Name)
+		name := fmt.Sprintf("%d", i)
+		if session.Name != "" {
+			name = session.Name
 		}
 
-		var root string
+		root := "."
 		if session.Root != "" {
-			root = fmt.Sprintf("-c %s", session.Root)
+			root = session.Root
 		}
 
-		var defaultWinName string
-		var defaultWinCmd string
-		if session.DefaultWinInd != -1 {
-			if session.Windows[session.DefaultWinInd].Name == "" {
-				defaultWinName = "0"
-			} else {
-				defaultWinName = fmt.Sprintf("-n %s", session.Windows[session.DefaultWinInd].Name)
+		var cmd *exec.Cmd
+		if i == 0 {
+			if (session.Default == nil && session.Windows[0].Default) ||
+				(session.Default != nil && !session.Windows[0].Default) {
+				return internalErr
 			}
-			defaultWinCmd = session.Windows[session.DefaultWinInd].Command
-			// add panes for default window
+			if session.Default.Name == "" {
+				cmd = exec.Command("tmux", "new-session", "-d", "-c", root, "-s", name)
+			} else {
+				cmd = exec.Command("tmux", "new-session", "-d", "-c", root, "-s", name, "-n", session.Default.Name)
+			}
 		}
-		cmd := exec.Command("tmux new-session -d", root, name, defaultWinName)
+		// add panes for default window
+		cmd = exec.Command("tmux", "new-session", "-d", "-c", root, "-s", name)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -54,7 +79,7 @@ func confSessionizer(sessions []*Session) error {
 		}
 
 		// fix name, since the flag is included
-		defWinCmd := exec.Command("tmux send-keys -t", name, defaultWinCmd) // Fix
+		defWinCmd := exec.Command("tmux send-keys -t", name) // Fix
 		defWinCmd.Stdin = os.Stdin
 		defWinCmd.Stdout = os.Stdout
 		defWinCmd.Stderr = os.Stderr
@@ -69,6 +94,9 @@ func confSessionizer(sessions []*Session) error {
 	return nil
 }
 
-func listSessions() error {
-	return nil
+func listSessions() ([]string, error) {
+	out, err := exec.Command("tmux", "list-sessions").Output()
+
+	sessions := strings.Split(string(out), "\n")
+	return sessions, err
 }

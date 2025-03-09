@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -29,7 +28,7 @@ func parser(filename string) ([]*Session, error) {
 		}
 		switch line {
 		case "[[sessions]]":
-			session = &Session{DefaultWinInd: -1}
+			session = &Session{Default: nil}
 			sessions = append(sessions, session)
 			prev = "s"
 		case "[[sessions.windows]]":
@@ -87,11 +86,14 @@ func parser(filename string) ([]*Session, error) {
 					if err != nil {
 						return nil, fmt.Errorf("%w: value is not string.", invalidValue)
 					}
-					if val && session.DefaultWinInd != -1 {
+					if val && session.Default != nil {
 						return nil, fmt.Errorf("%w: More than default window in session.", invalidValue)
 					}
 					window.Default = val
-					session.DefaultWinInd = len(session.Windows) - 1
+					if val {
+						session.Windows = session.Windows[:len(session.Windows)-1]
+						session.Default = window
+					}
 				default:
 					return nil, fmt.Errorf("%w: key of window is invalid", invalidKey)
 				}
@@ -105,7 +107,7 @@ func parser(filename string) ([]*Session, error) {
 					return nil, fmt.Errorf("%w: key of pane is invalid", invalidKey)
 				}
 			default:
-				return nil, errors.New("Internal error.")
+				return nil, internalErr
 			}
 		}
 	}
