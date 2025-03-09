@@ -28,5 +28,6 @@ bind '"\C-f":"tms\n"'
 
 - [X] Main functionality (find + fzf).
 - [X] Finish sessionizer for configuration files.
-- [ ] Test configuration flag.
-- [ ] Test template files.
+- [X] Test configuration flag.
+- [X] Test template files.
+- [ ] Edge cases for CLI.

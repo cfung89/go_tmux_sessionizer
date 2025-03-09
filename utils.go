@@ -44,6 +44,7 @@ func fileExists(path string) (bool, error) {
 }
 
 func insideTmux() bool {
+	// can also use os.Getenv("TERM_PROGRAM") == "tmux"
 	if os.Getenv("TMUX") == "" {
 		return false
 	}
