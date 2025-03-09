@@ -36,7 +36,6 @@ func parser(filename string) ([]*Session, error) {
 			session.Windows = append(session.Windows, window)
 			prev = "w"
 		case "[[sessions.windows.panes]]":
-			window.Panes = append(window.Panes, &Pane{})
 			prev = "p"
 		default:
 			assert((string(line[0]) == "[" && string(line[len(line)-1]) == "]") ||
@@ -98,12 +97,21 @@ func parser(filename string) ([]*Session, error) {
 					return nil, fmt.Errorf("%w: key of window is invalid", invalidKey)
 				}
 			case "p":
-				if parts[0] == "command" {
+				switch parts[0] {
+				case "command":
 					if !isString(parts[1]) {
 						return nil, fmt.Errorf("%w: value is not string.", invalidValue)
 					}
-					window.Command = strings.Trim(parts[1], "\"")
-				} else {
+					window.Panes = append(window.Panes, &Pane{Command: strings.Trim(parts[1], "\"")})
+				case "orientation":
+					if !isString(parts[1]) {
+						return nil, fmt.Errorf("%w: value is not string.", invalidValue)
+					}
+					str := strings.Trim(parts[1], "\"")
+					if str == "-h" || str == "-v" {
+						window.Panes = append(window.Panes, &Pane{Orientation: str})
+					}
+				default:
 					return nil, fmt.Errorf("%w: key of pane is invalid", invalidKey)
 				}
 			default:

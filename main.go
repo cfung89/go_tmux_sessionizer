@@ -1,12 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"os"
 )
 
 const configFile = ".tms.toml"
 
 func main() {
+	// flag for config file, and flag for projects config file, copy template files from .config
+
+	// main
 	var path string
 	var err error
 	if len(os.Args) == 1 {
@@ -21,15 +25,16 @@ func main() {
 		}
 	}
 
-	// confSessionizer will be fixed
-	// filename := fmt.Sprintf("%s/%s", path, configFile)
-	// if exists, _ := fExists(filename); exists {
-	// 	toml, err := parser(filename)
-	// 	check(err)
-	// 	err = confSessionizer(toml)
-	// 	check(err)
-	// }
-
-	err = simpleSessionizer(path)
-	check(err)
+	filename := fmt.Sprintf("%s/%s", path, configFile)
+	if exists, _ := fExists(filename); exists {
+		toml, err := parser(filename)
+		check(err)
+		err = createSessions(toml)
+		check(err)
+	} else {
+		name, err := simpleSessionizer(path)
+		check(err)
+		err = switchClient(name)
+		check(err)
+	}
 }

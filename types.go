@@ -55,7 +55,8 @@ func (w *Window) ToString(count int) string {
 }
 
 type Pane struct {
-	Command string
+	Orientation string
+	Command     string
 }
 
 func (p *Pane) ToString() string {
