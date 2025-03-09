@@ -85,7 +85,7 @@ func createSessions(sessions []*Session) (string, error) {
 
 func createWindows(sName string, windows []*Window) error {
 	for i, n := range windows {
-		add := exec.Command("tmux", "new-window", "-t", sName)
+		add := exec.Command("tmux", "new-window", "-t", sName, "-n", n.Name)
 		add.Stderr = os.Stderr
 		if err := add.Run(); err != nil {
 			return err
@@ -107,7 +107,7 @@ func createWindows(sName string, windows []*Window) error {
 func createPanes(sName string, wName string, panes []*Pane) error {
 	for i, n := range panes {
 		if n.Orientation == "" {
-			n.Orientation = "-v"
+			n.Orientation = "-h"
 		}
 		add := exec.Command("tmux", "split-window", "-t", fmt.Sprintf("%s:%s", sName, wName), n.Orientation)
 		add.Stderr = os.Stderr
@@ -140,7 +140,7 @@ func switchClient(name string) error {
 		err := cmd.Run()
 		return err
 	}
-	cmd := exec.Command("tmux", "attach", "-t", name)
+	cmd := exec.Command("tmux", "attach", "-t", fmt.Sprintf("%s:1.1", name))
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

@@ -9,6 +9,7 @@ root = "/home"
 
   [[sessions.windows.panes]]
   command = "htop"
+  orientation = "-v"
 
   [[sessions.windows]]
   name = "editor"
@@ -22,7 +23,7 @@ root = "/home"
   name = "server"
   
     [[sessions.windows.panes]]
-    command = "python3 -v"
+    command = "python3"
     
     [[sessions.windows.panes]]
     command = "ls"

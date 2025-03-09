@@ -42,7 +42,7 @@ type Session struct {
 func (s *Session) ToString() string {
 	str := fmt.Sprintf("Session:\n\t- Name: %s\n\t- Root: %s\n\t- Default: %t\n\t- Windows:\n",
 		s.Name, s.Root, s.Default != nil)
-	for _, n := range s.Windows {
+	for _, n := range append([]*Window{s.Default}, s.Windows...) {
 		str += fmt.Sprintf("\t%s\n", n.ToString(2))
 	}
 	return str
@@ -74,5 +74,5 @@ type Pane struct {
 }
 
 func (p *Pane) ToString() string {
-	return fmt.Sprintf("Pane - Command: %s\n", p.Command)
+	return fmt.Sprintf("Pane - Orientation: %s; Command: %s\n", p.Orientation, p.Command)
 }

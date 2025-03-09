@@ -21,6 +21,7 @@ func parser(filename string) ([]*Session, error) {
 	var sessions []*Session
 	var session *Session
 	var window *Window
+	var pane *Pane
 
 	scanner := bufio.NewScanner(f)
 	var prev string
@@ -39,6 +40,8 @@ func parser(filename string) ([]*Session, error) {
 			session.Windows = append(session.Windows, window)
 			prev = "w"
 		case "[[sessions.windows.panes]]":
+			pane = &Pane{}
+			window.Panes = append(window.Panes, pane)
 			prev = "p"
 		default:
 			assert((string(line[0]) == "[" && string(line[len(line)-1]) == "]") ||
@@ -105,14 +108,14 @@ func parser(filename string) ([]*Session, error) {
 					if !isString(parts[1]) {
 						return nil, fmt.Errorf("%w: value is not string.", invalidValue)
 					}
-					window.Panes = append(window.Panes, &Pane{Command: strings.Trim(parts[1], "\"")})
+					pane.Command = strings.Trim(parts[1], "\"")
 				case "orientation":
 					if !isString(parts[1]) {
 						return nil, fmt.Errorf("%w: value is not string.", invalidValue)
 					}
 					str := strings.Trim(parts[1], "\"")
 					if str == "-h" || str == "-v" {
-						window.Panes = append(window.Panes, &Pane{Orientation: str})
+						pane.Orientation = strings.Trim(parts[1], "\"")
 					}
 				default:
 					return nil, fmt.Errorf("%w: key of pane is invalid", invalidKey)

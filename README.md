@@ -26,4 +26,7 @@ bind '"\C-f":"tms\n"'
 
 ## TODO
 
-- [ ] Finish sessionizer for configuration files.
+- [X] Main functionality (find + fzf).
+- [X] Finish sessionizer for configuration files.
+- [ ] Test configuration flag.
+- [ ] Test template files.
