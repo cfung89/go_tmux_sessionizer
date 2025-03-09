@@ -22,19 +22,24 @@ func simpleSessionizer(root string) (string, error) {
 	return base, err
 }
 
-func createSessions(sessions []*Session) (string, error) {
+func createSessions(path string, sessions []*Session) (string, error) {
 	if sessions == nil {
 		return "", errors.New("Sessions is nil.")
 	}
 	var attach string
 	for i, session := range sessions {
 		var err error
-		path := session.Root
 		if session.Root == "" {
-			path, err = filepath.Abs(".")
+			if path == "" {
+				path, err = filepath.Abs(".")
+			} else {
+				path, err = filepath.Abs(path)
+			}
 			if err != nil {
 				return "", err
 			}
+		} else {
+			path = session.Root
 		}
 
 		name := session.Name

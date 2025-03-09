@@ -61,12 +61,12 @@ func parser(filename string) ([]*Session, error) {
 					if !isString(parts[1]) {
 						return nil, fmt.Errorf("%w: value is not string.", invalidValue)
 					}
-					session.Name = strings.Trim(parts[1], "\"")
+					session.Name, _ = trimString(parts[1])
 				case "root":
 					if !isString(parts[1]) {
 						return nil, fmt.Errorf("%w: value is not string.", invalidValue)
 					}
-					parts[1] = strings.Trim(parts[1], "\"")
+					parts[1], _ = trimString(parts[1])
 					if exists, _ := dirExists(parts[1]); !exists {
 						return nil, dirNotExist
 					}
@@ -80,12 +80,12 @@ func parser(filename string) ([]*Session, error) {
 					if !isString(parts[1]) {
 						return nil, fmt.Errorf("%w: value is not string.", invalidValue)
 					}
-					window.Name = strings.Trim(parts[1], "\"")
+					window.Name, _ = trimString(parts[1])
 				case "command":
 					if !isString(parts[1]) {
 						return nil, fmt.Errorf("%w: value is not string.", invalidValue)
 					}
-					window.Command = strings.Trim(parts[1], "\"")
+					window.Command, _ = trimString(parts[1])
 				case "default":
 					val, err := parseBool(parts[1])
 					if err != nil {
@@ -108,14 +108,14 @@ func parser(filename string) ([]*Session, error) {
 					if !isString(parts[1]) {
 						return nil, fmt.Errorf("%w: value is not string.", invalidValue)
 					}
-					pane.Command = strings.Trim(parts[1], "\"")
+					pane.Command, _ = trimString(parts[1])
 				case "orientation":
 					if !isString(parts[1]) {
 						return nil, fmt.Errorf("%w: value is not string.", invalidValue)
 					}
-					str := strings.Trim(parts[1], "\"")
+					str, _ := trimString(parts[1])
 					if str == "-h" || str == "-v" {
-						pane.Orientation = strings.Trim(parts[1], "\"")
+						pane.Orientation = str
 					}
 				default:
 					return nil, fmt.Errorf("%w: key of pane is invalid", invalidKey)
@@ -137,6 +137,19 @@ func isString(val string) bool {
 		return true
 	}
 	return false
+}
+
+func trimString(s string) (string, error) {
+	if string(s[0]) == `"` {
+		s = strings.TrimPrefix(s, `"`)
+		s = strings.TrimSuffix(s, `"`)
+	} else if string(s[0]) == `'` {
+		s = strings.TrimPrefix(s, `'`)
+		s = strings.TrimSuffix(s, `'`)
+	} else {
+		return "", fmt.Errorf("%w: value is not string.", invalidValue)
+	}
+	return s, nil
 }
 
 func parseBool(val string) (bool, error) {

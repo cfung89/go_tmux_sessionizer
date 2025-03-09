@@ -25,7 +25,6 @@ func main() {
 	flag.Parse()
 	assert((len(*configPtr) >= 0 && len(*cPtr) == 0) || (len(*configPtr) == 0 && len(*cPtr) >= 0), invalidArgument)
 
-	var path string
 	var err error
 	if *hPtr || *helpPtr {
 		flag.PrintDefaults()
@@ -35,24 +34,28 @@ func main() {
 		tail := flag.Args()
 		assert(len(tail) >= 2, fmt.Errorf("%w: not enough arguments for copy (needs 2).", invalidArgument))
 		from := tail[len(tail)-2]
-		path, err = filepath.Abs(tail[len(tail)-1])
+		path, err := filepath.Abs(tail[len(tail)-1])
 		check(err)
 		exists, err := dirExists(path)
 		assert(exists, fmt.Errorf("Last argument of copy must be a directory: %w", err))
 		homeDir, err := os.UserHomeDir()
 		check(err)
-		cmd := exec.Command("cp", fmt.Sprintf("%s/.config/tms/templates/%s.toml", homeDir, from), fmt.Sprintf("%s/%s", path, configFile))
+		filename := fmt.Sprintf("%s/%s", path, configFile)
+		cmd := exec.Command("cp", fmt.Sprintf("%s/.config/tms/templates/%s.toml", homeDir, from), filename)
 		cmd.Stderr = os.Stderr
 		err = cmd.Run()
 		check(err)
+		parseAndCreate(path, filename)
+		return
 	} else if *configPtr != "" {
-		parseAndCreate(*configPtr)
+		parseAndCreate(filepath.Dir(*configPtr), *configPtr)
 		return
 	} else if *cPtr != "" {
-		parseAndCreate(*cPtr)
+		parseAndCreate(filepath.Dir(*cPtr), *cPtr)
 		return
 	}
-	// main
+	// main functionality
+	var path string
 	if len(os.Args) == 1 {
 		homeDir, err := os.UserHomeDir()
 		check(err)
@@ -69,7 +72,7 @@ func main() {
 		filename := fmt.Sprintf("%s/%s", path, configFile)
 		var name string
 		if exists, _ := fileExists(filename); exists {
-			parseAndCreate(filename)
+			parseAndCreate(path, filename)
 		} else {
 			name, err = simpleSessionizer(path)
 			check(err)
@@ -79,10 +82,10 @@ func main() {
 	}
 }
 
-func parseAndCreate(filename string) {
+func parseAndCreate(path string, filename string) {
 	toml, err := parser(filename)
 	check(err)
-	name, err := createSessions(toml)
+	name, err := createSessions(path, toml)
 	check(err)
 	err = switchClient(name)
 	check(err)
