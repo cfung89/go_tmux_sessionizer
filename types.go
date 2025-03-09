@@ -7,16 +7,30 @@ import (
 )
 
 var (
-	invalidLine  = errors.New("Invalid line.")
-	invalidInput = errors.New("Invalid input.")
-	invalidKey   = errors.New("Invalid key.")
-	invalidValue = errors.New("Invalid value.")
-	invalidFile  = errors.New("Invalid file type, must be TOML.")
-	dirNotExist  = errors.New("Directory does not exist.")
-	fileNotExist = errors.New("File does not exist.")
-	inTmux       = errors.New("Already in tmux session")
-	internalErr  = errors.New("Internal error.")
+	invalidLine     = errors.New("Invalid line.")
+	invalidInput    = errors.New("Invalid input.")
+	invalidKey      = errors.New("Invalid key.")
+	invalidValue    = errors.New("Invalid value.")
+	invalidFile     = errors.New("Invalid file type, must be TOML.")
+	dirNotExist     = errors.New("Directory does not exist.")
+	fileNotExist    = errors.New("File does not exist.")
+	inTmux          = errors.New("Already in tmux session")
+	internalErr     = errors.New("Internal error.")
+	invalidArgument = errors.New("Invalid argument.")
 )
+
+type StringList []string
+
+// String is an implementation of the flag.Value interface
+func (s *StringList) String() string {
+	return strings.Join(*s, ",")
+}
+
+// Set is an implementation of the flag.Value interface
+func (s *StringList) Set(value string) error {
+	*s = strings.Split(value, ",")
+	return nil
+}
 
 type Session struct {
 	Name    string

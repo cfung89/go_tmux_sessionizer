@@ -16,13 +16,13 @@ root = "/home"
   command = "nvim"
 
   [[sessions.windows.panes]]
-  command = "tail -f /var/log/syslog"
+  command = "tail /var/log/syslog"
   
   [[sessions.windows]]
   name = "server"
   
     [[sessions.windows.panes]]
-    command = "python3 -m http.server"
+    command = "python3 -v"
     
     [[sessions.windows.panes]]
-    command = "watch -n 5 'df -h'"
+    command = "ls"

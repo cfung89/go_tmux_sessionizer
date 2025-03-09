@@ -9,6 +9,9 @@ import (
 
 // TOML parser
 func parser(filename string) ([]*Session, error) {
+	if _, err := fileExists(filename); err != nil {
+		return nil, err
+	}
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err

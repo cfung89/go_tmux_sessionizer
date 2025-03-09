@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 func assert(truth bool, msg error) {
@@ -30,7 +32,7 @@ func dirExists(path string) (bool, error) {
 	return dir.IsDir(), nil
 }
 
-func fExists(path string) (bool, error) {
+func fileExists(path string) (bool, error) {
 	f, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -39,4 +41,21 @@ func fExists(path string) (bool, error) {
 		return false, err
 	}
 	return f.Mode().IsRegular(), nil
+}
+
+func insideTmux() bool {
+	if os.Getenv("TMUX") == "" {
+		return false
+	}
+	return true
+}
+
+func getSName(root string) (string, error) {
+	root, err := filepath.Abs(root)
+	if err != nil {
+		return "", err
+	}
+	r := strings.NewReplacer(" ", "", ".", "")
+	base := r.Replace(filepath.Base(root))
+	return base, nil
 }

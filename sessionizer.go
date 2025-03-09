@@ -11,47 +11,43 @@ import (
 
 func simpleSessionizer(root string) (string, error) {
 	// can also use os.Getenv("TERM_PROGRAM") == "tmux"
-	root, err := filepath.Abs(root)
-	base := strings.ReplaceAll(filepath.Base(root), " ", "")
+	base, err := getSName(root)
 	if err != nil {
 		return "", err
-	}
-	if os.Getenv("TMUX") == "" {
-		cmd := exec.Command("tmux", "new-session", "-d", "-c", root, "-s", base)
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		err := cmd.Run()
-		return base, err
 	}
 	cmd := exec.Command("tmux", "new-session", "-d", "-c", root, "-s", base)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
-	if err != nil {
-		return "", err
-	}
 	return base, err
 }
 
-func createSessions(sessions []*Session) error {
+func createSessions(sessions []*Session) (string, error) {
 	if sessions == nil {
-		return errors.New("Sessions is nil.")
+		return "", errors.New("Sessions is nil.")
 	}
-	for _, session := range sessions {
+	var attach string
+	for i, session := range sessions {
 		var err error
 		root := session.Root
 		if session.Root == "" {
 			root, err = filepath.Abs(".")
 			if err != nil {
-				return err
+				return "", err
 			}
 		}
 
 		name := session.Name
 		if session.Name == "" {
-			name = strings.ReplaceAll(filepath.Base(root), " ", "")
+			name, err = getSName(root)
+			if err != nil {
+				return "", err
+			}
+		}
+		// Attach to the first session
+		if i == 0 {
+			attach = name
 		}
 
 		// Default window (with its panes)
@@ -64,27 +60,27 @@ func createSessions(sessions []*Session) error {
 		}
 		cmd.Stderr = os.Stderr
 		if err = cmd.Run(); err != nil {
-			return err
+			return "", err
 		}
 		// Create panes for default window
 		if err = createPanes(name, "1", session.Default.Panes); err != nil {
-			return err
+			return "", err
 		}
 		// Run command in default window, if given
 		if session.Default.Command != "" {
 			cmd = exec.Command("tmux", "send-keys", "-t", fmt.Sprintf("%s:%s.%d", name, "1", 1), session.Default.Command, "C-m")
 			cmd.Stderr = os.Stderr
 			if err := cmd.Run(); err != nil {
-				return err
+				return "", err
 			}
 		}
 
 		// Create remaining windows and their panes
 		if err = createWindows(name, session.Windows); err != nil {
-			return err
+			return "", err
 		}
 	}
-	return nil
+	return attach, nil
 }
 
 func createWindows(sName string, windows []*Window) error {
@@ -111,7 +107,7 @@ func createWindows(sName string, windows []*Window) error {
 func createPanes(sName string, wName string, panes []*Pane) error {
 	for i, n := range panes {
 		if n.Orientation == "" {
-			n.Orientation = "-h"
+			n.Orientation = "-v"
 		}
 		add := exec.Command("tmux", "split-window", "-t", fmt.Sprintf("%s:%s", sName, wName), n.Orientation)
 		add.Stderr = os.Stderr
@@ -136,7 +132,15 @@ func listSessions() ([]string, error) {
 }
 
 func switchClient(name string) error {
-	cmd := exec.Command("tmux", "switch-client", "-t", name)
+	if insideTmux() {
+		cmd := exec.Command("tmux", "switch-client", "-t", name)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err := cmd.Run()
+		return err
+	}
+	cmd := exec.Command("tmux", "attach", "-t", name)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
