@@ -11,6 +11,15 @@ import (
 const configFile = ".tms.toml"
 
 func main() {
+	if os.Args[1] == "kill" && insideTmux() {
+		cmd := exec.Command("tmux", "kill-session")
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err := cmd.Run()
+		check(err)
+	}
+
 	helpPtr := flag.Bool("help", false, "Help")
 	hPtr := flag.Bool("h", false, "Help")
 

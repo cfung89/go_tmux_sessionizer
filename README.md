@@ -45,6 +45,8 @@ tms [ starting-point ] [ -h | -help ] ([ -f | -file ] { <config_file_path>} ) ( 
 `tms` searches the directory tree and opens the chosen directory through `fzf`. If no starting-point is specified, `$HOME` is assumed.
 It also checks for a `.tms.toml` configuration file in the chosen directory and will create a tmux session based on that configuration file, if found.
 
+`tms kill` is the equivalent short form of `tmux kill-session`.
+
 ### Configuration file
 
 Using the `-f` or `-file` flags with the path to a configuration file starts the session(s), window(s), and pane(s) outlined in the file.
