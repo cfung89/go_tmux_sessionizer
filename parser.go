@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-// TOML parser
-func parser(filename string) ([]*Session, error) {
+// TOML parseToml
+func parseToml(filename string) ([]*Session, error) {
 	if _, err := fileExists(filename); err != nil {
 		return nil, err
 	}
@@ -131,6 +131,41 @@ func parser(filename string) ([]*Session, error) {
 	return sessions, nil
 }
 
+// Ignore file parser
+func parseIgnoreFile(filename string) ([]string, error) {
+	if _, err := fileExists(filename); err != nil {
+		return nil, err
+	}
+
+	f, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	ignores := make([]string, 0)
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || line[0] == '#' {
+			continue
+		}
+		if line[0] == '~' {
+			homeDir, err := os.UserHomeDir()
+			check(err)
+			line = fmt.Sprintf("%s%s", homeDir, line[1:])
+		}
+		index := strings.IndexByte(line, byte('#'))
+		if index == -1 {
+			line = strings.TrimRight(line, "/")
+		} else {
+			line = strings.TrimRight(line[0:index], "/")
+		}
+		ignores = append(ignores, line)
+	}
+	return ignores, nil
+}
+
 func isString(val string) bool {
 	if (string(val[0]) == "\"" && string(val[len(val)-1]) == "\"") ||
 		(string(val[0]) == "'" && string(val[len(val)-1]) == "'") {
@@ -153,10 +188,12 @@ func trimString(s string) (string, error) {
 }
 
 func parseBool(val string) (bool, error) {
-	if val == "true" {
+	switch val {
+	case "true":
 		return true, nil
-	} else if val == "false" {
+	case "false":
 		return false, nil
+	default:
+		return false, invalidValue
 	}
-	return false, invalidValue
 }

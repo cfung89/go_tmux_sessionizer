@@ -35,6 +35,8 @@ func main() {
 	assert((len(*configPtr) >= 0 && len(*cPtr) == 0) || (len(*configPtr) == 0 && len(*cPtr) >= 0), invalidArgument)
 
 	var err error
+	homeDir, err := os.UserHomeDir()
+	check(err)
 	if *hPtr || *helpPtr {
 		flag.PrintDefaults()
 		return
@@ -47,8 +49,6 @@ func main() {
 		check(err)
 		exists, err := dirExists(path)
 		assert(exists, fmt.Errorf("Last argument of copy must be a directory: %w", err))
-		homeDir, err := os.UserHomeDir()
-		check(err)
 		filename := fmt.Sprintf("%s/%s", path, configFile)
 		cmd := exec.Command("cp", fmt.Sprintf("%s/.config/tms/templates/%s.toml", homeDir, from), filename)
 		cmd.Stderr = os.Stderr
@@ -65,34 +65,37 @@ func main() {
 	}
 	// main functionality
 	var path string
+	ignores, err := parseIgnoreFile(fmt.Sprintf("%s/.config/tms/tmsignore", homeDir))
+	if err != nil {
+		ignores = make([]string, 0)
+	}
 	if len(os.Args) == 1 {
 		homeDir, err := os.UserHomeDir()
 		check(err)
-		path, err = fzf(homeDir)
+		path, err = fzf(homeDir, ignores)
 		check(err)
-	} else {
-		if bool, _ := dirExists(os.Args[1]); bool {
-			path, err = fzf(os.Args[1])
-			check(err)
-		}
+	} else if bool, _ := dirExists(os.Args[1]); bool {
+		path, err = fzf(os.Args[1], ignores)
+		check(err)
 	}
 
-	if path != "" {
-		filename := fmt.Sprintf("%s/%s", path, configFile)
-		var name string
-		if exists, _ := fileExists(filename); exists {
-			parseAndCreate(path, filename)
-		} else {
-			name, err = simpleSessionizer(path)
-			check(err)
-			err = switchClient(name)
-			check(err)
-		}
+	if len(path) == 0 {
+		return
+	}
+	filename := fmt.Sprintf("%s/%s", path, configFile)
+	var name string
+	if exists, _ := fileExists(filename); exists {
+		parseAndCreate(path, filename)
+	} else {
+		name, err = simpleSessionizer(path)
+		check(err)
+		err = switchClient(name)
+		check(err)
 	}
 }
 
 func parseAndCreate(path string, filename string) {
-	toml, err := parser(filename)
+	toml, err := parseToml(filename)
 	check(err)
 	name, err := createSessions(path, toml)
 	check(err)

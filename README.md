@@ -8,6 +8,7 @@ Dependencies: `fzf` and `tmux`
 ## Features
 
 - Fuzzyfind through directories and create a tmux session in the chosen directory.
+- Ignoring directories from the search space with a generic `tmsignore` file.
 - Custom TOML parser.
 - Parse TOML file and create tmux sessions, windows, panes based on the given configuration.
 - Copy template configuration files into project directory.
@@ -46,6 +47,19 @@ tms [ starting-point ] [ -h | -help ] ([ -f | -file ] { <config_file_path>} ) ( 
 It also checks for a `.tms.toml` configuration file in the chosen directory and will create a tmux session based on that configuration file, if found.
 
 `tms kill` is the equivalent short form of `tmux kill-session`.
+
+### Ignore file
+
+The ignore file is stored in `$HOME/.config/tms/tmsignore`.
+It works similarly to `.gitignore` files, with certain minor differences:
+- Trailing forward slashes (*'/'*) are ignored.
+- Octothorpes (*'#'*) are used for comments.
+- If the pattern contains no slashes, it acts as a global filter: it matches any directory whose name matches the pattern.
+- If the pattern contains a slash (at the start or middle), it acts as a path filter: it matches only directories whose absolute path **contains** the pattern.
+- Wildcards may be used.
+- If a tilde character (*'~'*) is found at the beginning of the pattern, it is replaced with `$HOME`.
+
+See an example at `./test/tmsignore`.
 
 ### Configuration file
 

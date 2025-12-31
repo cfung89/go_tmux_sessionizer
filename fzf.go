@@ -9,12 +9,33 @@ import (
 	"strings"
 )
 
-func fzf(root string) (string, error) {
+func fzf(root string, ignores []string) (string, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	findArgs := []string{root}
+	numIgnores := len(ignores)
+	if numIgnores > 0 {
+		findArgs = append(findArgs, "(")
+		for i, n := range ignores {
+			if n == "" {
+				continue
+			}
+			if strings.ContainsRune(n, '/') {
+				findArgs = append(findArgs, "-path", fmt.Sprintf("*%s*", n))
+			} else {
+				findArgs = append(findArgs, "-name", n)
+			}
+			if i < numIgnores-1 {
+				findArgs = append(findArgs, "-o")
+			}
+		}
+		findArgs = append(findArgs, ")", "-prune", "-o")
+	}
+	findArgs = append(findArgs, "-type", "d")
+
+	findCmd := exec.CommandContext(ctx, "find", findArgs...)
 	fzfCmd := exec.CommandContext(ctx, "fzf")
-	findCmd := exec.CommandContext(ctx, "find", root, "-type", "d")
 
 	// show errors if fails
 	findCmd.Stderr = os.Stderr

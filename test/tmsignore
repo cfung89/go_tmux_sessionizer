@@ -1,0 +1,8 @@
+# Directory name specific
+.git
+node_modules
+.gradle
+
+# Path contains
+~/go
+~/.*
