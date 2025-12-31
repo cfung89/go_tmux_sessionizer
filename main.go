@@ -20,6 +20,8 @@ func main() {
 		check(err)
 	}
 
+	gotoPtr := flag.Bool("g", false, "Prints the selected directory from the fuzzyfind search. Does not create a tmux session.")
+
 	helpPtr := flag.Bool("help", false, "Help")
 	hPtr := flag.Bool("h", false, "Help")
 
@@ -77,11 +79,17 @@ func main() {
 	} else if bool, _ := dirExists(os.Args[1]); bool {
 		path, err = fzf(os.Args[1], ignores)
 		check(err)
+	} else if *gotoPtr {
+		path, err = fzf(homeDir, ignores)
+		check(err)
+		fmt.Print(path)
+		return
 	}
 
 	if len(path) == 0 {
 		return
 	}
+
 	filename := fmt.Sprintf("%s/%s", path, configFile)
 	var name string
 	if exists, _ := fileExists(filename); exists {
